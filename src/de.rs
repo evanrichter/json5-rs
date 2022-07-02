@@ -387,7 +387,7 @@ fn parse_hex(s: &str) -> Result<u32> {
 }
 
 fn is_hex_literal(s: &str) -> bool {
-    s.len() > 2 && (&s[..2] == "0x" || &s[..2] == "0X")
+    s.len() > 2 && (s.starts_with("0x") || s.starts_with("0X"))
 }
 
 fn is_infinite(s: &str) -> bool {
@@ -521,7 +521,12 @@ impl<'de, 'a> de::VariantAccess<'de> for Variant<'de> {
     where
         T: de::DeserializeSeed<'de>,
     {
-        seed.deserialize(&mut Deserializer::from_pair(self.pair.unwrap()))
+        seed.deserialize(&mut Deserializer::from_pair(self.pair.ok_or_else(
+            || Error::Message {
+                msg: "pair fail".to_string(),
+                location: None,
+            },
+        )?))
     }
 
     fn tuple_variant<V>(self, _len: usize, visitor: V) -> Result<V::Value>
